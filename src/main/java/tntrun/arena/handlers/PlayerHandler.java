@@ -77,6 +77,10 @@ public class PlayerHandler {
 		return checkJoin(player, false);
 	}
 
+	public boolean checkJoin(Player player, boolean ignorePartyLimitations) {
+		return checkJoin(player, false, ignorePartyLimitations);
+	}
+
 	/**
 	 * Returns whether a player is able to join the arena at this time.
 	 *
@@ -84,7 +88,7 @@ public class PlayerHandler {
 	 * @param silent
 	 * @return
 	 */
-	public boolean checkJoin(Player player, boolean silent) {
+	public boolean checkJoin(Player player, boolean silent, boolean ignorePartyLimitations) {
 		if (!preJoinChecks(player, silent)) {
 			return false;
 		}
@@ -105,6 +109,19 @@ public class PlayerHandler {
 				Messages.sendMessage(player, Messages.limitreached);
 			}
 			return false;
+		}
+
+		if (!ignorePartyLimitations) {  // Serble party system
+			boolean canJoin;
+			if (silent) {
+				canJoin = TNTRun.getInstance().getSerbleParties().canJoinGame(player);
+			} else {
+				canJoin = TNTRun.getInstance().getSerbleParties().canJoinGameAndAlert(player);
+			}
+
+			if (!canJoin) {
+				return false;
+			}
 		}
 
 		return processFee(player, silent);
@@ -328,6 +345,7 @@ public class PlayerHandler {
 		} else if (plugin.isAdpParties()) {
 			joinAdpPartyMembers(player);
 		}
+		TNTRun.getInstance().getSerbleParties().triggerWarp(player);
 	} 
 
 	/**
@@ -1001,12 +1019,12 @@ public class PlayerHandler {
 	 * @param player
 	 */
 	private void joinPartyMembers(Player player) {
-		if(!plugin.getParties().isPartyLeader(player)) {
+		if (!plugin.getParties().isPartyLeader(player)) {
 			return;
 		}
 		plugin.getParties().getPartyMembers(player.getName()).forEach(member -> {
 			Player p = Bukkit.getPlayer(member);
-			if (p != null && checkJoin(p)) {
+			if (p != null && checkJoin(p, true)) {
 				spawnPlayer(p, Messages.playerjoinedtoothers);
 			}
 		});
@@ -1042,7 +1060,7 @@ public class PlayerHandler {
 				return;
 			}
 			Player p = Bukkit.getPlayer(member.getPlayerUUID());
-			if (p != null && checkJoin(p)) {
+			if (p != null && checkJoin(p, true)) {
 				spawnPlayer(p, Messages.playerjoinedtoothers);
 			}
 		});

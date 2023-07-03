@@ -163,7 +163,7 @@ public class PlayerDataStore {
 
 	/**
 	 * This migrates players doublejumps when the server is in offline mode.
-	 * @param player name
+	 * @param name name
 	 * @param amount of doublejumps
 	 */
 	public void saveDoubleJumpsToFile(String name, int amount) {

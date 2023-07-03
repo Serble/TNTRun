@@ -1,9 +1,12 @@
 name: TNTRun_reloaded
 main: tntrun.TNTRun
 softdepend: [WorldEdit, Vault, HeadsPlus, mcMMO, PlaceholderAPI, Parties]
+description: TNT Run plugin modified by for the Serble Network
+depend:
+  - SerbleNetworkPlugin
 version: ${project.version}
 api-version: 1.16
-author: [steve4744]
+author: steve4744, CoPokBl
 commands:
   tntrunsetup:
     description: TNTRun arena setup commands

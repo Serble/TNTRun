@@ -176,7 +176,7 @@ public class Stats {
 
 	private boolean isValidUuid(String uuid) {
 		try {
-			UUID.fromString(uuid);
+			UUID ignored = UUID.fromString(uuid);
 		} catch (IllegalArgumentException ex){
 			return false;
 		}
@@ -184,7 +184,10 @@ public class Stats {
 	}
 
 	private boolean isKnownPlayer(String identity) {
-		OfflinePlayer player = Bukkit.getOfflinePlayer(UUID.fromString(identity));
+		UUID uuid = UUID.fromString(identity);
+		UUID mojangId = plugin.getSerbleIds().getPlayerFromProfile(uuid);
+		if (mojangId != null) uuid = mojangId;
+		OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
 		return player.hasPlayedBefore();
 	}
 
@@ -303,7 +306,14 @@ public class Stats {
 	}
 
 	public String getPlayerUUID(OfflinePlayer player) {
-		return plugin.useUuid() ? player.getUniqueId().toString() : player.getName();
+		if (plugin.useUuid()) {
+			UUID serbleId = plugin.getSerbleIds().getPlayerUuid(player.getUniqueId());
+			if (serbleId != null) {
+				return serbleId.toString();
+			}
+			return player.getUniqueId().toString();
+		}
+		return player.getName();
 	}
 
 	/**

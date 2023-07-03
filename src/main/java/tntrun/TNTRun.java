@@ -17,28 +17,18 @@
 
 package tntrun;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Logger;
-
+import net.serble.serblenetworkplugin.API.IdService;
+import net.serble.serblenetworkplugin.API.PartyService;
 import org.bstats.bukkit.Metrics;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-
 import tntrun.arena.Arena;
 import tntrun.arena.handlers.BungeeHandler;
 import tntrun.arena.handlers.SoundHandler;
 import tntrun.arena.handlers.VaultHandler;
-import tntrun.utils.Bars;
-import tntrun.utils.Shop;
-import tntrun.utils.Sounds;
-import tntrun.utils.Stats;
-import tntrun.utils.TitleMsg;
-import tntrun.utils.Utils;
 import tntrun.commands.AutoTabCompleter;
 import tntrun.commands.ConsoleCommands;
 import tntrun.commands.GameCommands;
@@ -47,12 +37,7 @@ import tntrun.commands.setup.SetupTabCompleter;
 import tntrun.datahandler.ArenasManager;
 import tntrun.datahandler.PlayerDataStore;
 import tntrun.datahandler.ScoreboardManager;
-import tntrun.eventhandler.HeadsPlusHandler;
-import tntrun.eventhandler.MenuHandler;
-import tntrun.eventhandler.PlayerLeaveArenaChecker;
-import tntrun.eventhandler.PlayerStatusHandler;
-import tntrun.eventhandler.RestrictionHandler;
-import tntrun.eventhandler.ShopHandler;
+import tntrun.eventhandler.*;
 import tntrun.kits.Kits;
 import tntrun.lobby.GlobalLobby;
 import tntrun.menu.Menus;
@@ -61,6 +46,12 @@ import tntrun.messages.Messages;
 import tntrun.parties.Parties;
 import tntrun.signs.SignHandler;
 import tntrun.signs.editor.SignEditor;
+import tntrun.utils.*;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Logger;
 
 public class TNTRun extends JavaPlugin {
 
@@ -85,6 +76,8 @@ public class TNTRun extends JavaPlugin {
 	private Stats stats;
 	private MySQL mysql;
 	private Shop shop;
+	private IdService serbleIds;
+	private PartyService serbleParties;
 
 	public ArenasManager amanager;
 	private ScoreboardManager scoreboardManager;
@@ -215,7 +208,8 @@ public class TNTRun extends JavaPlugin {
 	}
 
 	public boolean useUuid() {
-		return Bukkit.getOnlineMode() || (isBungeecord() && getConfig().getBoolean("bungeecord.useUUID"));
+		//return Bukkit.getOnlineMode() || (isBungeecord() && getConfig().getBoolean("bungeecord.useUUID"));
+		return true;  // Required for Serble
 	}
 
 	public boolean isBungeecord() {
@@ -293,6 +287,23 @@ public class TNTRun extends JavaPlugin {
 			adpParties = true;
 			log.info("Successfully linked with Parties, version " + Parties.getDescription().getVersion());
 		}
+		Plugin SerbleNetworkPlugin = getServer().getPluginManager().getPlugin("SerbleNetworkPlugin");
+		if (SerbleNetworkPlugin != null && SerbleNetworkPlugin.isEnabled()) {
+			RegisteredServiceProvider<IdService> idServiceRegisteredServiceProvider = getServer().getServicesManager().getRegistration(IdService.class);
+			assert idServiceRegisteredServiceProvider != null;
+			serbleIds = idServiceRegisteredServiceProvider.getProvider();
+
+			RegisteredServiceProvider<PartyService> partyServiceRegisteredServiceProvider = getServer().getServicesManager().getRegistration(PartyService.class);
+			assert partyServiceRegisteredServiceProvider != null;
+			serbleParties = partyServiceRegisteredServiceProvider.getProvider();
+
+			serbleParties.registerWarpListener(new SerblePartyWarpHandler());
+			log.info("Successfully linked with SerbleNetworkPlugin, version " + SerbleNetworkPlugin.getDescription().getVersion());
+		} else {
+			log.severe("SerbleNetworkPlugin not found! This version of TNTRun is for Serble and requires SerbleNetworkPlugin to work!");
+			getServer().getPluginManager().disablePlugin(this);
+			return;
+		}
 
 		vaultHandler = new VaultHandler(this);
 	}
@@ -313,6 +324,14 @@ public class TNTRun extends JavaPlugin {
 
 	public BungeeHandler getBungeeHandler() {
 		return bungeeHandler;
+	}
+
+	public PartyService getSerbleParties() {
+		return serbleParties;
+	}
+
+	public IdService getSerbleIds() {
+		return serbleIds;
 	}
 
 	public Parties getParties() {
