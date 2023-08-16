@@ -15,6 +15,16 @@ public class SerblePartyWarpHandler implements WarpEventListener {
             return false;
         }
 
+        if (arena.getStatusManager().isArenaRunning()) {
+            Messages.sendMessage(warpEvent.getTarget(), Messages.arenarunning);
+            return true;  // Don't let Serble handle it
+        }
+
+        if (arena.getPlayersManager().getPlayersCount() == arena.getStructureManager().getMaxPlayers()) {
+            Messages.sendMessage(warpEvent.getTarget(), Messages.limitreached);
+            return true;
+        }
+
         arena.getPlayerHandler().spawnPlayer(warpEvent.getTarget(), Messages.playerjoinedtoothers);
         return true;
     }
